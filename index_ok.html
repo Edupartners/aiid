@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-First Digitální Identita – Tvoje jméno najde ChatGPT i Google</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #080808;
+            --bg-card: #131313;
+            --bg-input: #2a2a2a;
+            --bg-input-focus: #303030;
+            --border: rgba(255,255,255,0.12);
+            --border-input: rgba(255,255,255,0.28);
+            --border-active: rgba(0,212,255,0.6);
+            --accent: #00d4ff;
+            --accent-dim: rgba(0,212,255,0.08);
+            --accent-glow: rgba(0,212,255,0.2);
+            --text: #f0f0f0;
+            --text-label: #c8c8c8;
+            --text-desc: #888;
+            --text-placeholder: rgba(255,255,255,0.3);
+            --success: #00ff9d;
+            --error: #ff4757;
+            --step2: #7c3aed;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -300px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 900px;
+            height: 900px;
+            background: radial-gradient(circle, rgba(0,212,255,0.05) 0%, transparent 65%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* HEADER */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            padding: 18px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(8,8,8,0.92);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+        }
+        .logo {
+            font-family: 'Syne', sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--text);
+        }
+        .logo span { color: var(--accent); }
+        .header-badge {
+            background: var(--accent-dim);
+            border: 1px solid rgba(0,212,255,0.3);
+            color: var(--accent);
+            padding: 7px 16px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* HERO SECTION */
+        .hero-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 100px 40px 60px;
+            max-width: 1200px;
+            margin: 0 auto;
+            gap: 60px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-left {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .hero-eyebrow {
+            display: inline-block;
+            background: var(--accent-dim);
+            border: 1px solid rgba(0,212,255,0.3);
+            color: var(--accent);
+            padding: 7px 18px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+        }
+
+        .hero-left h1 {
+            font-family: 'Syne', sans-serif;
+            font-size: clamp(32px, 3.5vw, 52px);
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: 0px;
+            margin-bottom: 20px;
+            color: var(--text);
+        }
+        .hero-left h1 span { color: var(--accent); }
+
+        .hero-left p {
+            font-size: 17px;
+            color: #999;
+            line-height: 1.75;
+            margin-bottom: 32px;
+            max-width: 480px;
+        }
+
+        .trust-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            margin-bottom: 36px;
+        }
+        .trust-badge {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 13px;
+            color: #777;
+            font-weight: 500;
+        }
+        .trust-badge .check { color: var(--success); font-size: 15px; }
+
+        .hero-cta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 16px 36px;
+            border-radius: 10px;
+            font-family: 'Syne', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary:hover {
+            box-shadow: 0 0 30px var(--accent-glow);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            color: #666;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
+        }
+        .btn-secondary:hover { color: var(--text); }
+
+        /* HERO RIGHT — browser mockup */
+        .hero-right {
+            flex: 1;
+            min-width: 0;
+            position: relative;
+        }
+
+        .browser-mockup {
+            background: #111;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid #2a2a2a;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+            position: relative;
+        }
+
+        .browser-bar {
+            background: #1a1a1a;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid #222;
+        }
+
+        .browser-dots {
+            display: flex;
+            gap: 6px;
+        }
+        .browser-dots span {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        .browser-dots span:nth-child(1) { background: #ff5f57; }
+        .browser-dots span:nth-child(2) { background: #febc2e; }
+        .browser-dots span:nth-child(3) { background: #28c840; }
+
+        .browser-url {
+            flex: 1;
+            background: #252525;
+            border-radius: 6px;
+            padding: 5px 12px;
+            font-size: 11px;
+            color: #555;
+            font-family: monospace;
+            text-align: center;
+        }
+
+        /* Scroll window */
+        .browser-viewport {
+            height: 420px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .browser-viewport img {
+            width: 100%;
+            display: block;
+            animation: scrollPreview 18s ease-in-out infinite;
+        }
+
+        @keyframes scrollPreview {
+            0%   { transform: translateY(0); }
+            45%  { transform: translateY(calc(-100% + 420px)); }
+            55%  { transform: translateY(calc(-100% + 420px)); }
+            100% { transform: translateY(0); }
+        }
+
+        /* AI-FIRST BADGES */
+        .ai-badges {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .ai-badge {
+            position: absolute;
+            background: rgba(10,10,10,0.92);
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-size: 11px;
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            backdrop-filter: blur(8px);
+            animation: floatBadge 4s ease-in-out infinite;
+        }
+
+        .ai-badge .badge-name { font-weight: 700; }
+        .ai-badge .badge-desc { color: #555; font-size: 10px; font-family: 'DM Sans', sans-serif; }
+
+        .ai-badge.b1 { top: 20px; left: -90px; border-left: 3px solid #00d4ff; animation-delay: 0s; }
+        .ai-badge.b1 .badge-name { color: #00d4ff; }
+
+        .ai-badge.b2 { top: 20px; right: -90px; border-left: 3px solid #a78bfa; animation-delay: 0.8s; }
+        .ai-badge.b2 .badge-name { color: #a78bfa; }
+
+        .ai-badge.b3 { top: 50%; transform: translateY(-50%); left: -90px; border-left: 3px solid #00ff9d; animation-delay: 1.2s; }
+        .ai-badge.b3 .badge-name { color: #00ff9d; }
+
+        .ai-badge.b4 { top: 50%; transform: translateY(-50%); right: -90px; border-left: 3px solid #febc2e; animation-delay: 1.8s; }
+        .ai-badge.b4 .badge-name { color: #febc2e; }
+
+        .ai-badge.b5 { bottom: 40px; left: -90px; border-left: 3px solid #ff7eb3; animation-delay: 2.4s; }
+        .ai-badge.b5 .badge-name { color: #ff7eb3; }
+
+        .ai-badge.b6 { bottom: 40px; right: -90px; border-left: 3px solid #ff5f57; animation-delay: 0.4s; }
+        .ai-badge.b6 .badge-name { color: #ff5f57; }
+
+        @keyframes floatBadge {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .ai-badge.b3, .ai-badge.b4 {
+            animation: floatBadgeMiddle 4s ease-in-out infinite;
+        }
+        @keyframes floatBadgeMiddle {
+            0%, 100% { transform: translateY(-50%); }
+            50% { transform: translateY(calc(-50% - 5px)); }
+        }
+
+        /* FORM SECTION */
+        .form-section {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 0 20px 80px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* QUALITY BANNER */
+        .quality-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            background: rgba(0,212,255,0.05);
+            border: 1px solid rgba(0,212,255,0.2);
+            border-left: 3px solid var(--accent);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 36px;
+        }
+        .quality-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+        .quality-banner strong { display: block; font-size: 15px; font-weight: 700; color: var(--accent); margin-bottom: 5px; }
+        .quality-banner span { font-size: 14px; color: #888; line-height: 1.65; }
+
+        /* PROGRESS */
+        .progress-wrapper { margin-bottom: 36px; }
+        .progress-steps { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; position: relative; }
+        .progress-line { position: absolute; top: 20px; left: 20px; right: 20px; height: 2px; background: rgba(255,255,255,0.08); z-index: 0; }
+        .progress-line-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--step2)); transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); width: 0%; }
+        .step-dot { width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.15); background: var(--bg); display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: #555; position: relative; z-index: 1; transition: all 0.3s ease; }
+        .step-dot.active { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 16px var(--accent-glow); }
+        .step-dot.completed { border-color: var(--success); background: var(--success); color: #000; }
+        .step-dot.completed::after { content: '✓'; font-size: 15px; }
+        .step-dot.completed span { display: none; }
+        .progress-labels { display: flex; justify-content: space-between; }
+        .step-label { font-size: 12px; font-weight: 600; color: #444; text-align: center; width: 40px; transition: color 0.3s ease; }
+        .step-label.active { color: var(--accent); }
+        .step-label.completed { color: var(--success); }
+
+        /* FORM CARD */
+        .form-card { background: var(--bg-card); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 44px 48px; position: relative; overflow: hidden; }
+        .form-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), rgba(0,212,255,0.1)); transition: background 0.4s ease; }
+        .form-card[data-step="2"]::before { background: linear-gradient(90deg, var(--step2), rgba(124,58,237,0.1)); }
+        .form-card[data-step="3"]::before { background: linear-gradient(90deg, var(--success), rgba(0,255,157,0.1)); }
+        .step-panel { display: none; animation: fadeIn 0.35s ease; }
+        .step-panel.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+
+        .step-header { margin-bottom: 36px; }
+        .step-number-badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+        .step-panel[data-step="2"] .step-number-badge { color: #a78bfa; }
+        .step-panel[data-step="3"] .step-number-badge { color: var(--success); }
+        .step-header h2 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 10px; color: var(--text); }
+        .step-header p { color: #888; font-size: 16px; line-height: 1.65; }
+
+        .field-group { margin-bottom: 28px; }
+        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .field-label { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: var(--text-label); margin-bottom: 10px; }
+        .field-label .required { color: var(--accent); font-size: 18px; line-height: 1; }
+
+        .tooltip-icon { width: 20px; height: 20px; border-radius: 50%; border: 1px solid #444; color: #555; font-size: 11px; display: inline-flex; align-items: center; justify-content: center; cursor: help; position: relative; font-style: normal; font-weight: 700; transition: all 0.2s; flex-shrink: 0; }
+        .tooltip-icon:hover { border-color: var(--accent); color: var(--accent); }
+        .tooltip-icon:hover .tooltip-content { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
+        .tooltip-content { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%) translateY(6px); background: #1c1c1c; border: 1px solid rgba(0,212,255,0.3); border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #ccc; width: 260px; line-height: 1.55; opacity: 0; visibility: hidden; transition: all 0.2s ease; pointer-events: none; z-index: 20; font-weight: 400; letter-spacing: 0; }
+        .tooltip-content::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: rgba(0,212,255,0.3); }
+
+        .field-description { font-size: 13px; color: #666; margin-bottom: 10px; line-height: 1.6; font-style: italic; }
+
+        input[type="text"], input[type="email"], input[type="tel"], input[type="url"], textarea, select {
+            width: 100%; background: var(--bg-input); border: 1.5px solid var(--border-input); border-radius: 10px; padding: 15px 18px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 400; transition: all 0.2s ease; outline: none; -webkit-appearance: none;
+        }
+        input::placeholder, textarea::placeholder { color: var(--text-placeholder); font-size: 15px; }
+        input:focus, textarea:focus, select:focus { border-color: var(--accent); background: var(--bg-input-focus); box-shadow: 0 0 0 3px var(--accent-dim); }
+        input.error, textarea.error { border-color: var(--error); box-shadow: 0 0 0 3px rgba(255,71,87,0.08); }
+        .error-msg { font-size: 13px; color: var(--error); margin-top: 7px; display: none; font-weight: 500; }
+        .error-msg.visible { display: block; }
+        textarea { resize: vertical; min-height: 120px; line-height: 1.65; }
+
+        .file-upload-area { border: 2px dashed rgba(255,255,255,0.15); border-radius: 12px; padding: 32px; text-align: center; cursor: pointer; transition: all 0.2s ease; position: relative; background: rgba(255,255,255,0.02); }
+        .file-upload-area:hover, .file-upload-area.dragover { border-color: var(--accent); background: var(--accent-dim); }
+        .file-upload-area input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+        .file-upload-icon { font-size: 36px; margin-bottom: 12px; }
+        .file-upload-text { font-size: 15px; color: #888; }
+        .file-upload-text span { color: var(--accent); font-weight: 600; }
+        .file-upload-hint { font-size: 13px; color: #555; margin-top: 6px; }
+        .file-preview { display: none; align-items: center; gap: 14px; padding: 14px; background: var(--accent-dim); border-radius: 10px; margin-top: 12px; border: 1px solid rgba(0,212,255,0.2); }
+        .file-preview.visible { display: flex; }
+        .file-preview img { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); }
+        .file-preview-name { font-size: 14px; font-weight: 600; color: var(--text); }
+        .file-preview-size { font-size: 12px; color: #666; margin-top: 2px; }
+
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .option-item { position: relative; }
+        .option-item input { position: absolute; opacity: 0; width: 0; height: 0; }
+        .option-label { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: var(--bg-input); border: 1.5px solid var(--border-input); border-radius: 10px; cursor: pointer; transition: all 0.2s ease; font-size: 15px; font-weight: 500; color: #bbb; }
+        .option-label:hover { border-color: rgba(0,212,255,0.35); color: var(--text); }
+        .option-item input:checked + .option-label { border-color: var(--accent); background: var(--accent-dim); color: var(--text); }
+        .option-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #444; flex-shrink: 0; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+        .option-item input:checked + .option-label .option-dot { border-color: var(--accent); background: var(--accent); }
+        .option-item input:checked + .option-label .option-dot::after { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #000; }
+
+        .field-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 36px 0; }
+
+        .tip-box { background: rgba(0,212,255,0.04); border: 1px solid rgba(0,212,255,0.15); border-left: 3px solid var(--accent); border-radius: 10px; padding: 16px 20px; font-size: 14px; color: #999; line-height: 1.65; margin-bottom: 28px; }
+        .tip-box strong { color: var(--accent); }
+
+        .form-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 40px; padding-top: 28px; border-top: 1px solid rgba(255,255,255,0.07); }
+        .btn-back { background: transparent; border: 1.5px solid rgba(255,255,255,0.12); color: #777; padding: 14px 28px; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+        .btn-back:hover { border-color: #555; color: var(--text); }
+        .btn-next { background: var(--accent); color: #000; border: none; padding: 15px 36px; border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.25s ease; display: flex; align-items: center; gap: 8px; }
+        .btn-next:hover { box-shadow: 0 0 28px var(--accent-glow); transform: translateY(-2px); }
+        .btn-submit { background: linear-gradient(135deg, var(--accent), var(--success)); color: #000; border: none; padding: 16px 40px; border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800; cursor: pointer; transition: all 0.25s ease; display: flex; align-items: center; gap: 10px; }
+        .btn-submit:hover { box-shadow: 0 0 36px rgba(0,255,157,0.25); transform: translateY(-2px); }
+        .btn-submit:disabled, .btn-next:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+        .step-counter { font-size: 14px; color: #555; font-weight: 500; }
+
+        .success-panel { display: none; text-align: center; padding: 60px 20px; animation: fadeIn 0.5s ease; }
+        .success-panel.active { display: block; }
+        .success-icon { width: 80px; height: 80px; border-radius: 50%; background: rgba(0,255,157,0.08); border: 2px solid var(--success); display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 24px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(0,255,157,0.25); } 50% { box-shadow: 0 0 0 14px rgba(0,255,157,0); } }
+        .success-panel h2 { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; margin-bottom: 14px; }
+        .success-panel h2 span { color: var(--success); }
+        .success-panel > p { color: #888; font-size: 16px; line-height: 1.75; max-width: 440px; margin: 0 auto 30px; }
+        .success-steps { display: flex; justify-content: center; gap: 40px; margin-top: 30px; }
+        .success-step { text-align: center; }
+        .success-step-icon { width: 52px; height: 52px; border-radius: 14px; background: var(--accent-dim); border: 1px solid rgba(0,212,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 10px; }
+        .success-step p { font-size: 13px; color: #666; margin: 0; line-height: 1.5; }
+
+        .loading-overlay { display: none; position: fixed; inset: 0; background: rgba(8,8,8,0.92); z-index: 200; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+        .loading-overlay.active { display: flex; }
+        .loading-spinner { width: 56px; height: 56px; border: 3px solid rgba(255,255,255,0.08); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { font-family: 'Syne', sans-serif; font-size: 18px; color: #aaa; }
+        .loading-subtext { font-size: 14px; color: #555; }
+
+        footer { text-align: center; padding: 30px; color: #444; font-size: 13px; border-top: 1px solid rgba(255,255,255,0.06); }
+        footer a { color: var(--accent); text-decoration: none; }
+
+        /* RESPONSIVE */
+        @media (max-width: 900px) {
+            .hero-section { flex-direction: column; padding: 100px 20px 40px; gap: 40px; }
+            .ai-badge { display: none; }
+            .hero-right { width: 100%; }
+        }
+        @media (max-width: 640px) {
+            header { padding: 14px 16px; }
+            .form-card { padding: 28px 20px; }
+            .field-row { grid-template-columns: 1fr; }
+            .options-grid { grid-template-columns: 1fr; }
+            .success-steps { flex-direction: column; align-items: center; gap: 20px; }
+            .form-nav { flex-direction: column-reverse; gap: 12px; }
+            .btn-back, .btn-next, .btn-submit { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">AI<span>ID</span></div>
+        <div class="header-badge">AI-FIRST DIGITAL IDENTITY</div>
+    </header>
+
+    <!-- HERO SPLIT -->
+    <section class="hero-section">
+        <div class="hero-left">
+            <div class="hero-eyebrow">⚡ Zbývá 38 míst z 50 · Zdarma</div>
+            <h1>Tvoje<br>digitální identita.<br><span>100% AI-First.</span><br>Zdarma.</h1>
+            <p>Vyplň dotazník za 5 minut. Získáš prémiovou digitální identitu v hodnotě <strong style="color:var(--text);font-weight:700;">10 000 Kč</strong> – optimalizovanou pro Google, ChatGPT i Perplexity. Když někdo hledá experta ve tvém oboru, najde tebe.</p>
+            <div class="trust-badges">
+                <div class="trust-badge"><span class="check">✓</span> Hotovo do 24 hodin</div>
+                <div class="trust-badge"><span class="check">✓</span> Web je tvůj navždy</div>
+                <div class="trust-badge"><span class="check">✓</span> Bez agentury a čekání</div>
+                <div class="trust-badge"><span class="check">✓</span> Najdou tě AI asistenti</div>
+            </div>
+            <div class="hero-cta">
+                <a href="#formular" class="btn-primary">
+                    Chci svůj web zdarma
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+                <a href="https://edupartners.github.io/ai-identity-pages/michal-micek55555/" target="_blank" class="btn-secondary">
+                    Zobrazit ukázku →
+                </a>
+            </div>
+        </div>
+
+        <div class="hero-right">
+            <div style="position: relative; padding: 0 100px;">
+                <div class="browser-mockup">
+                    <div class="browser-bar">
+                        <div class="browser-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <div class="browser-url">jan-novak.cz</div>
+                    </div>
+                    <div class="browser-viewport">
+                        <img src="preview.png" alt="Ukázka hotového AI-First webu">
+                    </div>
+                </div>
+                <!-- AI-FIRST BADGES -->
+                <div class="ai-badges">
+                    <div class="ai-badge b1">
+                        <span class="badge-name">robots.txt</span>
+                        <span class="badge-desc">AI crawler rules</span>
+                    </div>
+                    <div class="ai-badge b2">
+                        <span class="badge-name">llms.txt</span>
+                        <span class="badge-desc">LLM context</span>
+                    </div>
+                    <div class="ai-badge b3">
+                        <span class="badge-name">sitemap.xml</span>
+                        <span class="badge-desc">AI indexing</span>
+                    </div>
+                    <div class="ai-badge b4">
+                        <span class="badge-name">schema.org</span>
+                        <span class="badge-desc">Structured data</span>
+                    </div>
+                    <div class="ai-badge b5">
+                        <span class="badge-name">meta tags</span>
+                        <span class="badge-desc">OG + Twitter</span>
+                    </div>
+                    <div class="ai-badge b6">
+                        <span class="badge-name">og:image</span>
+                        <span class="badge-desc">Social preview</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FORM SECTION -->
+    <div id="formular" class="form-section">
+
+        <div class="quality-banner">
+            <span class="quality-icon">⚡</span>
+            <div>
+                <strong>Kvalita výstupu = kvalita vstupu</strong>
+                <span>Čím konkrétněji vyplníš, tím silnější a hodnotnější web dostaneš. Kdo to odflákne, dostane průměrný výsledek. Kdo to vezme vážně, získá digitální identitu která prodává.</span>
+            </div>
+        </div>
+
+        <div class="progress-wrapper" id="progressWrapper">
+            <div class="progress-steps">
+                <div class="progress-line"><div class="progress-line-fill" id="progressFill"></div></div>
+                <div class="step-dot active" id="dot1"><span>1</span></div>
+                <div class="step-dot" id="dot2"><span>2</span></div>
+                <div class="step-dot" id="dot3"><span>3</span></div>
+            </div>
+            <div class="progress-labels">
+                <div class="step-label active" id="label1">Identita</div>
+                <div class="step-label" id="label2">Expertiza</div>
+                <div class="step-label" id="label3">Kontakt</div>
+            </div>
+        </div>
+
+        <div class="form-card" id="formCard" data-step="1">
+
+            <!-- STEP 1 -->
+            <div class="step-panel active" data-step="1" id="step1">
+                <div class="step-header">
+                    <div class="step-number-badge">KROK 1 ze 3 · TVOJE IDENTITA</div>
+                    <h2>Kdo jsi?</h2>
+                    <p>Základní informace. Čím přesněji vyplníš, tím silnější digitální identitu dostaneš.</p>
+                </div>
+                <div class="field-group">
+                    <div class="field-row">
+                        <div>
+                            <div class="field-label">Jméno a příjmení <span class="required">*</span><i class="tooltip-icon">i<span class="tooltip-content">Napiš své celé jméno tak jak chceš být vidět na webu.</span></i></div>
+                            <input type="text" id="jmeno" placeholder="Jan Novák" required>
+                            <div class="error-msg" id="err-jmeno">Vyplň prosím své jméno</div>
+                        </div>
+                        <div>
+                            <div class="field-label">Profese / titul <span class="required">*</span><i class="tooltip-icon">i<span class="tooltip-content">Krátce a výstižně – co děláš. Toto bude hlavní popis pod tvým jménem.</span></i></div>
+                            <input type="text" id="profese" placeholder="Marketing konzultant" required>
+                            <div class="error-msg" id="err-profese">Vyplň prosím svoji profesi</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Město <span class="required">*</span><i class="tooltip-icon">i<span class="tooltip-content">Město kde primárně působíš.</span></i></div>
+                    <input type="text" id="mesto" placeholder="Praha, Brno, Ostrava..." required>
+                    <div class="error-msg" id="err-mesto">Vyplň prosím své město</div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Tvoje fotka<i class="tooltip-icon">i<span class="tooltip-content">Portrétní foto s neutrálním pozadím. JPG nebo PNG, min. 400×400 px.</span></i></div>
+                    <div class="field-description">Profesionální foto výrazně zvyšuje konverzi webu.</div>
+                    <div class="file-upload-area" id="dropZone">
+                        <input type="file" id="fotka" accept="image/jpeg,image/png,image/webp">
+                        <div class="file-upload-icon">📷</div>
+                        <div class="file-upload-text"><span>Klikni pro nahrání</span> nebo přetáhni sem</div>
+                        <div class="file-upload-hint">JPG, PNG nebo WebP · Max 5 MB</div>
+                    </div>
+                    <div class="file-preview" id="filePreview">
+                        <img id="previewImg" src="" alt="Preview">
+                        <div class="file-preview-info">
+                            <div class="file-preview-name" id="previewName"></div>
+                            <div class="file-preview-size" id="previewSize"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Styl komunikace <span class="required">*</span><i class="tooltip-icon">i<span class="tooltip-content">Ovlivní tón textů na celém webu.</span></i></div>
+                    <div class="options-grid">
+                        <div class="option-item"><input type="radio" name="styl" id="styl1" value="Formální – profesionální a odborný tón"><label class="option-label" for="styl1"><span class="option-dot"></span>Formální</label></div>
+                        <div class="option-item"><input type="radio" name="styl" id="styl2" value="Neformální – přátelský a lidský tón" checked><label class="option-label" for="styl2"><span class="option-dot"></span>Neformální</label></div>
+                        <div class="option-item"><input type="radio" name="styl" id="styl3" value="Expertní – autoritativní a sebejistý tón"><label class="option-label" for="styl3"><span class="option-dot"></span>Expertní</label></div>
+                        <div class="option-item"><input type="radio" name="styl" id="styl4" value="Inspirativní – motivační a energický tón"><label class="option-label" for="styl4"><span class="option-dot"></span>Inspirativní</label></div>
+                    </div>
+                </div>
+                <div class="form-nav">
+                    <div class="step-counter">Krok 1 ze 3</div>
+                    <button class="btn-next" onclick="nextStep(1)">Pokračovat <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+                </div>
+            </div>
+
+            <!-- STEP 2 -->
+            <div class="step-panel" data-step="2" id="step2">
+                <div class="step-header">
+                    <div class="step-number-badge">KROK 2 ze 3 · TVOJE HODNOTA</div>
+                    <h2>Co umíš a co nabízíš?</h2>
+                    <p>Toto je srdce tvé digitální identity. Čím více konkrétních informací, tím vyšší vnímaná hodnota.</p>
+                </div>
+                <div class="tip-box"><strong>Hormozi pravidlo:</strong> Konkrétní čísla prodávají. Místo "pomáhám firmám růst" napiš "pomohl jsem 47 firmám zdvojnásobit tržby za 6 měsíců".</div>
+                <div class="field-group">
+                    <div class="field-label">Popiš svoji expertizu <span class="required">*</span><i class="tooltip-icon">i<span class="tooltip-content">Co konkrétně děláš, jak to děláš a co tě odlišuje. Napiš 2–4 věty.</span></i></div>
+                    <div class="field-description">Příklad: „Pomáhám majitelům e-shopů zvýšit tržby přes Facebook reklamu. Za 3 roky jsem pomohl 47 klientům zdvojnásobit online prodeje."</div>
+                    <textarea id="expertiza" placeholder="Popiš co děláš, jak to děláš a komu pomáháš..." required></textarea>
+                    <div class="error-msg" id="err-expertiza">Vyplň prosím svoji expertizu</div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Pro koho pracuješ? <span class="required">*</span><i class="tooltip-icon">i<span class="tooltip-content">Popiš svého ideálního zákazníka.</span></i></div>
+                    <div class="field-description">Příklad: „Majitelé malých e-shopů v ČR a SR, kteří chtějí růst online ale nemají čas řešit marketing sami."</div>
+                    <textarea id="cilova_skupina" placeholder="Kdo je tvůj ideální zákazník?" required></textarea>
+                    <div class="error-msg" id="err-cilova_skupina">Vyplň prosím cílovou skupinu</div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Tvůj největší výsledek <span class="required">*</span><i class="tooltip-icon">i<span class="tooltip-content">Konkrétní čísla fungují nejlépe.</span></i></div>
+                    <div class="field-description">Příklad: „Pomohl jsem klientovi zvýšit tržby o 340 % za 6 měsíců. Proškolil jsem 1 000+ podnikatelů."</div>
+                    <textarea id="vysledek" placeholder="Konkrétní výsledky s čísly..." required></textarea>
+                    <div class="error-msg" id="err-vysledek">Vyplň prosím svůj největší výsledek</div>
+                </div>
+                <div class="field-divider"></div>
+                <div class="field-group">
+                    <div class="field-label">Co tě odlišuje od konkurence?<i class="tooltip-icon">i<span class="tooltip-content">Napiš 3–5 konkrétních věcí které tě dělají unikátním.</span></i></div>
+                    <textarea id="odliseni" placeholder="Co tě dělá unikátním a důvěryhodným..."></textarea>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Certifikáty, ocenění, média<i class="tooltip-icon">i<span class="tooltip-content">Vše co zvyšuje tvoji důvěryhodnost.</span></i></div>
+                    <textarea id="socialni_dukaz" placeholder="Certifikáty, ocenění, média kde jsi byl..."></textarea>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Top 3–5 FAQ otázek<i class="tooltip-icon">i<span class="tooltip-content">Otázky které ti zákazníci nejčastěji kladou + odpovědi.</span></i></div>
+                    <div class="field-description">Formát: „Otázka: ... / Odpověď: ..." – každou otázku na nový řádek</div>
+                    <textarea id="faq" placeholder="Otázka: Jak dlouho trvá spolupráce?&#10;Odpověď: Projekt obvykle trvá 4–8 týdnů." style="min-height:140px"></textarea>
+                </div>
+                <div class="form-nav">
+                    <button class="btn-back" onclick="prevStep(2)">← Zpět</button>
+                    <button class="btn-next" onclick="nextStep(2)">Pokračovat <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+                </div>
+            </div>
+
+            <!-- STEP 3 -->
+            <div class="step-panel" data-step="3" id="step3">
+                <div class="step-header">
+                    <div class="step-number-badge">KROK 3 ze 3 · POSLEDNÍ KROK</div>
+                    <h2>Téměř hotovo!</h2>
+                    <p>Zadej kontakt a za chvíli dostaneš odkaz na svoji digitální identitu v hodnotě 10 000 Kč.</p>
+                </div>
+                <div class="field-group">
+                    <div class="field-row">
+                        <div>
+                            <div class="field-label">Email <span class="required">*</span><i class="tooltip-icon">i<span class="tooltip-content">Sem ti pošleme odkaz na hotový web.</span></i></div>
+                            <input type="email" id="email" placeholder="jan@example.cz" required>
+                            <div class="error-msg" id="err-email">Zadej prosím platný email</div>
+                        </div>
+                        <div>
+                            <div class="field-label">Telefon<i class="tooltip-icon">i<span class="tooltip-content">Telefon na webu (volitelné).</span></i></div>
+                            <input type="tel" id="telefon" placeholder="+420 777 123 456">
+                        </div>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <div class="field-label">LinkedIn URL<i class="tooltip-icon">i<span class="tooltip-content">Zkopíruj celou URL svého LinkedIn profilu.</span></i></div>
+                    <input type="url" id="linkedin" placeholder="https://www.linkedin.com/in/jannovak/">
+                </div>
+                <div class="field-group">
+                    <div class="field-label">Web tvé firmy nebo zaměstnavatele<i class="tooltip-icon">i<span class="tooltip-content">Podle tohoto webu vybere AI barvy pro tvůj osobní web.</span></i></div>
+                    <div class="field-description">Důležité! Podle tohoto webu vybere AI barvy pro tvůj osobní web.</div>
+                    <input type="url" id="firma_url" placeholder="https://www.mojefirma.cz">
+                </div>
+                <div class="field-divider"></div>
+                <div class="field-group">
+                    <div class="field-label">Vlastní doména?<i class="tooltip-icon">i<span class="tooltip-content">Pokud vlastníš doménu, web na ni můžeme nasadit. Pokud ne, dostaneš web na naší adrese zdarma.</span></i></div>
+                    <div class="options-grid">
+                        <div class="option-item"><input type="radio" name="domena" id="domena1" value="Ano, mám vlastní doménu"><label class="option-label" for="domena1"><span class="option-dot"></span>Ano, mám doménu</label></div>
+                        <div class="option-item"><input type="radio" name="domena" id="domena2" value="Nemám, chci web zdarma na vaší adrese" checked><label class="option-label" for="domena2"><span class="option-dot"></span>Chci web zdarma</label></div>
+                        <div class="option-item"><input type="radio" name="domena" id="domena3" value="Nevím, poraďte mi"><label class="option-label" for="domena3"><span class="option-dot"></span>Nevím, poraďte mi</label></div>
+                    </div>
+                </div>
+                <div class="form-nav">
+                    <button class="btn-back" onclick="prevStep(3)">← Zpět</button>
+                    <button class="btn-submit" id="submitBtn" onclick="submitForm()">Chci svoji digitální identitu zdarma →</button>
+                </div>
+            </div>
+
+            <!-- SUCCESS -->
+            <div class="success-panel" id="successPanel">
+                <div class="success-icon">✓</div>
+                <h2>Tvoje digitální identita <span>se tvoří!</span></h2>
+                <p>Výborně! Přijali jsme tvoje data. Připravujeme tvoji prémiovou digitální identitu v hodnotě 10 000 Kč. Za chvíli dostaneš email s odkazem.</p>
+                <div style="margin-top:20px;padding:18px;background:rgba(0,255,157,0.04);border:1px solid rgba(0,255,157,0.15);border-radius:12px;font-size:14px;color:#777;line-height:1.75;">
+                    Tvoje digitální identita bude <strong style="color:#e0e0e0;">100% optimalizovaná pro AI</strong> – ChatGPT, Perplexity i Google tě najdou.
+                </div>
+                <div class="success-steps">
+                    <div class="success-step"><div class="success-step-icon">🎨</div><p>Tvoří se<br>prémiový design</p></div>
+                    <div class="success-step"><div class="success-step-icon">🤖</div><p>AI optimalizace<br>pro ChatGPT</p></div>
+                    <div class="success-step"><div class="success-step-icon">📧</div><p>Odkaz přijde<br>na tvůj email</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+            <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:center;">
+                <span style="display:flex;align-items:center;gap:6px;font-size:13px;color:#444;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>SSL šifrování</span>
+                <span style="display:flex;align-items:center;gap:6px;font-size:13px;color:#444;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>GDPR compliant</span>
+                <span style="display:flex;align-items:center;gap:6px;font-size:13px;color:#444;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>Data zpracována bezpečně</span>
+            </div>
+            <p style="font-size:12px;color:#333;">© 2026 <a href="#">MÍČEK</a><sup style="font-size:9px;">®</sup> · <a href="#" style="color:#333;text-decoration:none;">Podmínky použití</a> · <a href="#" style="color:#333;text-decoration:none;">Ochrana dat</a></p>
+        </div>
+    </footer>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Připravujeme tvoji digitální identitu...</div>
+        <div class="loading-subtext">Prosím čekej, neopouštěj stránku</div>
+    </div>
+
+    <script>
+        const WEBHOOK_URL = 'https://aidigitalidentity.app.n8n.cloud/webhook/46a30da7-55af-47d7-8c93-7f273e7db745';
+        let uploadedFileBase64 = '';
+        let uploadedFileName = '';
+
+        const fileInput = document.getElementById('fotka');
+        const dropZone = document.getElementById('dropZone');
+        const filePreview = document.getElementById('filePreview');
+
+        fileInput.addEventListener('change', handleFile);
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault(); dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files[0]) { fileInput.files = e.dataTransfer.files; handleFile(); }
+        });
+
+        function handleFile() {
+            const file = fileInput.files[0];
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) { alert('Soubor je příliš velký. Maximum je 5 MB.'); return; }
+            const img = new Image();
+            const url = URL.createObjectURL(file);
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX = 800;
+                let w = img.width, h = img.height;
+                if (w > h) { if (w > MAX) { h = h * MAX / w; w = MAX; } } else { if (h > MAX) { w = w * MAX / h; h = MAX; } }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                uploadedFileBase64 = canvas.toDataURL('image/jpeg', 0.82);
+                uploadedFileName = file.name;
+                document.getElementById('previewImg').src = uploadedFileBase64;
+                document.getElementById('previewName').textContent = file.name;
+                document.getElementById('previewSize').textContent = Math.round(uploadedFileBase64.length * 0.75 / 1024) + ' KB (optimalizováno)';
+                filePreview.classList.add('visible');
+                URL.revokeObjectURL(url);
+            };
+            img.src = url;
+        }
+
+        function nextStep(from) {
+            if (!validateStep(from)) return;
+            const next = from + 1;
+            document.getElementById(`step${from}`).classList.remove('active');
+            document.getElementById(`step${next}`).classList.add('active');
+            document.getElementById('formCard').dataset.step = next;
+            document.getElementById(`dot${from}`).classList.remove('active');
+            document.getElementById(`dot${from}`).classList.add('completed');
+            document.getElementById(`dot${from}`).innerHTML = '';
+            document.getElementById(`dot${next}`).classList.add('active');
+            document.getElementById(`label${from}`).classList.remove('active');
+            document.getElementById(`label${from}`).classList.add('completed');
+            document.getElementById(`label${next}`).classList.add('active');
+            document.getElementById('progressFill').style.width = ({2:'50%',3:'100%'})[next] || '0%';
+            document.getElementById('formular').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function prevStep(from) {
+            const prev = from - 1;
+            document.getElementById(`step${from}`).classList.remove('active');
+            document.getElementById(`step${prev}`).classList.add('active');
+            document.getElementById('formCard').dataset.step = prev;
+            document.getElementById(`dot${from}`).classList.remove('active');
+            document.getElementById(`dot${prev}`).classList.remove('completed');
+            document.getElementById(`dot${prev}`).classList.add('active');
+            document.getElementById(`dot${prev}`).innerHTML = `<span>${prev}</span>`;
+            document.getElementById(`label${from}`).classList.remove('active');
+            document.getElementById(`label${prev}`).classList.remove('completed');
+            document.getElementById(`label${prev}`).classList.add('active');
+            document.getElementById('progressFill').style.width = ({1:'0%',2:'50%'})[prev] || '0%';
+            document.getElementById('formular').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function validateStep(step) {
+            let valid = true;
+            const fields = step === 1 ? ['jmeno','profese','mesto'] : step === 2 ? ['expertiza','cilova_skupina','vysledek'] : [];
+            fields.forEach(id => {
+                const el = document.getElementById(id);
+                const err = document.getElementById(`err-${id}`);
+                if (!el.value.trim()) { el.classList.add('error'); err.classList.add('visible'); valid = false; }
+                else { el.classList.remove('error'); err.classList.remove('visible'); }
+            });
+            return valid;
+        }
+
+        async function submitForm() {
+            const emailEl = document.getElementById('email');
+            if (!emailEl.value.trim() || !emailEl.value.includes('@')) {
+                emailEl.classList.add('error'); document.getElementById('err-email').classList.add('visible'); return;
+            }
+            const payload = {
+                jmeno: document.getElementById('jmeno').value,
+                profese: document.getElementById('profese').value,
+                mesto: document.getElementById('mesto').value,
+                styl_komunikace: document.querySelector('input[name="styl"]:checked')?.value || '',
+                expertiza: document.getElementById('expertiza').value,
+                cilova_skupina: document.getElementById('cilova_skupina').value,
+                vysledek: document.getElementById('vysledek').value,
+                odliseni: document.getElementById('odliseni').value,
+                socialni_dukaz: document.getElementById('socialni_dukaz').value,
+                faq: document.getElementById('faq').value,
+                email: document.getElementById('email').value,
+                telefon: document.getElementById('telefon').value,
+                linkedin: document.getElementById('linkedin').value,
+                firma_url: document.getElementById('firma_url').value,
+                domena: document.querySelector('input[name="domena"]:checked')?.value || '',
+                fotka_base64: uploadedFileBase64,
+                fotka_jmeno: uploadedFileName,
+            };
+            document.getElementById('loadingOverlay').classList.add('active');
+            document.getElementById('submitBtn').disabled = true;
+            try {
+                await fetch(WEBHOOK_URL, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload), mode: 'no-cors' });
+                document.getElementById('loadingOverlay').classList.remove('active');
+                document.getElementById('progressWrapper').style.display = 'none';
+                ['step1','step2','step3'].forEach(id => document.getElementById(id).classList.remove('active'));
+                document.getElementById('successPanel').classList.add('active');
+                document.getElementById('formCard').dataset.step = 'success';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } catch (err) {
+                document.getElementById('loadingOverlay').classList.remove('active');
+                document.getElementById('submitBtn').disabled = false;
+                alert('Nastala chyba při odesílání. Zkus to prosím znovu.');
+            }
+        }
+
+        document.querySelectorAll('input, textarea').forEach(el => {
+            el.addEventListener('input', () => {
+                el.classList.remove('error');
+                const err = document.getElementById(`err-${el.id}`);
+                if (err) err.classList.remove('visible');
+            });
+        });
+    </script>
+
+</body>
+</html>
